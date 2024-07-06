@@ -13,7 +13,7 @@ GitExt is designed to make working with GitHub easier through a console interfac
 - ❌ **Working with projects**
 - ❌ **Settings**
 
-*GitExt создан для удобной и эффективной работы с GitHub прямо из консоли, улучшая процесс управления кодом и проектами.*
+*GitExt is designed to make working with GitHub convenient and efficient right from the console, improving the process of managing code and projects.*
 
 ## Contact
 
