@@ -15,7 +15,7 @@ GitExt is designed to make working with GitHub easier through a console interfac
 
 *GitExt создан для удобной и эффективной работы с GitHub прямо из консоли, улучшая процесс управления кодом и проектами.*
 
-## Связь
+## Contact
 
 - Email: [aquiya@ukr.net](mailto:aquiya@ukr.net)
 - Telegram: [@dssskvzzz](https://t.me/dssskvzzz)
