@@ -1,6 +1,6 @@
 # GitExt
 
-## GitExt is a command-line application aimed at enhancing GitHub interactions.
+* GitExt is a command-line application aimed at enhancing GitHub interactions.
 
 О проекте
 
