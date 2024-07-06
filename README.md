@@ -6,7 +6,7 @@ GitExt is a command-line application aimed at enhancing GitHub interactions.
 
 GitExt is designed to make working with GitHub easier through a console interface. It provides easy interaction with your repositories and basic user information.
 
-## Ideas 🛠️
+## Ideas
 - ✅ **Main menu**
 - ✅ **User Information**
 - ✅ **Working with repositories**
