@@ -94,14 +94,18 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
                 stdscr.refresh()
 
                 file_path = os.path.join(root, file)
-                with open(file_path, "rb") as file_content:
-                    content = file_content.read()
-                    repo_path_file = os.path.relpath(file_path, path)
-                    try:
-                        repo_file = repo.get_contents(repo_path_file)
-                        repo.update_file(repo_file.path, "Replacing file", content, repo_file.sha)
-                    except:
-                        repo.create_file(repo_path_file, "Creating file", content)
+                try:
+                    with open(file_path, "rb") as file_content:
+                        content = file_content.read()
+                        repo_path_file = os.path.relpath(file_path, path)
+                        try:
+                            repo_file = repo.get_contents(repo_path_file)
+                            repo.update_file(repo_file.path, "Replacing file", content, repo_file.sha)
+                        except:
+                            repo.create_file(repo_path_file, "Creating file", content)
+                except Exception as e:
+                    logging.error(f"An error occurred while uploading {file}: {e}")
+                    continue  # Skip to the next file
     
     try:
         stdscr = curses.initscr()
@@ -115,17 +119,15 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
 
         # Start upload
         upload_directory(directory_path, "")
-    except:
-        logging.error("An error occurred while uploading files.")
-        pass
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
     finally:
-        # Clean up curses and return to normal terminal mode
         if stdscr:
             curses.nocbreak()
             stdscr.keypad(False)
             curses.echo()
             curses.endwin()
-
+            
 def upload_files_without_replacement(token, repo_name, directory_path, repo_owner):
     g = Github(token)
     repo = g.get_repo(f'{repo_owner}/{repo_name}')
