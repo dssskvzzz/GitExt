@@ -96,7 +96,6 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
                 try:
                     with open(file_path, "rb") as file_content:
                         content = file_content.read()
-                        # Normalize file_path and convert to GitHub API path format
                         repo_path_file = os.path.normpath(os.path.relpath(file_path, path)).replace(os.path.sep, '/')
                         try:
                             repo_file = repo.get_contents(repo_path_file)
@@ -105,7 +104,7 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
                             repo.create_file(repo_path_file, "Creating file", content)
                 except Exception as e:
                     logging.error(f"An error occurred while uploading {file}: {e}")
-                    continue  # Skip to the next file
+                    continue
     
     try:
         stdscr = curses.initscr()
@@ -113,11 +112,9 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
         curses.cbreak()
         stdscr.keypad(True)
 
-        # Count the total number of files
         for _, _, files in os.walk(directory_path):
             total_files += len(files)
 
-        # Start upload
         upload_directory(directory_path, "")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
@@ -128,4 +125,26 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
             curses.echo()
             curses.endwin()
 def upload_files_without_replacement(token, repo_name, directory_path, repo_owner):
-    pass
+    g = Github(token)
+    repo = g.get_repo(f'{repo_owner}/{repo_name}')
+
+    # Step 1: Get all existing files in the repository
+    existing_files = repo.get_contents("")
+    existing_file_paths = {file.path for file in existing_files}
+
+    # Step 2: Upload new files from specified directory
+    for root, dirs, files in os.walk(directory_path):
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            with open(file_path, 'rb') as file_content:
+                content = file_content.read()
+
+                if file_name in existing_file_paths:
+                    # File already exists, replace it
+                    existing_file = repo.get_contents(file_name)
+                    repo.update_file(existing_file.path, f"Updated {file_name}", content, existing_file.sha)
+                    print(f'File {file_name} updated in repository {repo_name}.')
+                else:
+                    # File does not exist, create new file
+                    repo.create_file(file_name, f"Added {file_name}", content)
+                    print(f'File {file_name} created in repository {repo_name}.')
