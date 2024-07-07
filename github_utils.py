@@ -69,19 +69,63 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
     g = Github(token)
     repo = g.get_repo(f'{repo_owner}/{repo_name}')
 
-    # Step 1: Get all existing files in the repository
-    contents = repo.get_contents("")
-    for content_file in contents:
-        repo.delete_file(content_file.path, "Removing existing files", content_file.sha)
-        print(f'Deleted file: {content_file.path}')
+    stdscr = None
+    total_files = 0
+    count = 0
 
-    # Step 2: Upload new files from specified directory
-    for root, dirs, files in os.walk(directory_path):
-        for file_name in files:
-            file_path = os.path.join(root, file_name)
-            with open(file_path, 'rb') as file_content:
-                content = file_content.read()
-                repo.create_file(file_name, f"Added {file_name}", content)
-                print(f'File {file_name} added to repository {repo_name}.')
+    def upload_directory(path, repo_path):
+        nonlocal count, total_files
+
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                count += 1
+                stdscr.clear()
+                stdscr.addstr(0, 0, f"Uploading files: {count}/{total_files}")
+                stdscr.addstr(1, 0, f"Current file: {file}")
+                
+                progress = int(count / total_files * 100)
+                if progress > 100:
+                    progress = 100
+                
+                animation = '#' * (progress // 2) + ' ' * (50 - progress // 2)
+                stdscr.addstr(2, 0, f"Progress: {progress}% [{animation}]")
+                
+                stdscr.refresh()
+
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, "rb") as file_content:
+                        content = file_content.read()
+                        # Normalize file_path and convert to GitHub API path format
+                        repo_path_file = os.path.normpath(os.path.relpath(file_path, path)).replace(os.path.sep, '/')
+                        try:
+                            repo_file = repo.get_contents(repo_path_file)
+                            repo.update_file(repo_file.path, "Replacing file", content, repo_file.sha)
+                        except:
+                            repo.create_file(repo_path_file, "Creating file", content)
+                except Exception as e:
+                    logging.error(f"An error occurred while uploading {file}: {e}")
+                    continue  # Skip to the next file
+    
+    try:
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        stdscr.keypad(True)
+
+        # Count the total number of files
+        for _, _, files in os.walk(directory_path):
+            total_files += len(files)
+
+        # Start upload
+        upload_directory(directory_path, "")
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        if stdscr:
+            curses.nocbreak()
+            stdscr.keypad(False)
+            curses.echo()
+            curses.endwin()
 def upload_files_without_replacement(token, repo_name, directory_path, repo_owner):
     pass
