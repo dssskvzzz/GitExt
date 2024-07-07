@@ -1,29 +1,44 @@
-import requests
-from bs4 import BeautifulSoup
-import json
+import subprocess
+import curses
+from config_manager import load_token, save_token, delete_token
+from menu import main_menu, display_settings
+from github_utils import get_github_user
 
-url = "https://minfin.com.ua/articles/"
 
-response = requests.get(url)
-soup = BeautifulSoup(response.content, "html.parser")
+def main(stdscr):
+    stdscr.clear()
 
-news_items = soup.find_all("li", class_="item")[:7]
+    token = load_token()
 
-news_data = []
+    if token is None:
+        stdscr.addstr(0, 0, "Enter your GitHub Personal Access Token:")
+        stdscr.refresh()
 
-for idx, item in enumerate(news_items):
-    date = item.find("span", class_="data").text.strip()
-    title = item.find("span", class_="link").text.strip()
-    url = 'https://minfin.com.ua'+item.find("a")["href"]
+        curses.echo()
+        token = stdscr.getstr(1, 0).decode("utf-8")
+        curses.noecho()
 
-    news_item = {
-        "title": title,
-        "data": date,
-        "url": url
-    }
-    news_data.append(news_item)
+        save_token(token)
 
-with open("news_data.json", "w", encoding="utf-8") as f:
-    json.dump(news_data, f, ensure_ascii=False, indent=4)
+    try:
+        user = get_github_user(token)
+        while True:
+            choice = main_menu(stdscr, user)
+            if choice == "settings":
+                key = display_settings(stdscr)
+                if key == ord('1'):
+                    delete_token()
+                    stdscr.addstr(5, 0, "Token deleted. Restart the program.")
+                    stdscr.refresh()
+                    stdscr.getch()
+                    break
+    except Exception as e:
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Authentication or data retrieval error.")
+        stdscr.addstr(1, 0, str(e))
+        stdscr.addstr(3, 0, "Delete the config/access.json file for re-authentication.")
 
-print("JSON file 'news_data.json' has been created successfully with the parsed news.")
+    stdscr.refresh()
+    stdscr.getch()
+
+curses.wrapper(main)
