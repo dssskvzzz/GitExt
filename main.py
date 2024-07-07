@@ -1,44 +1,29 @@
-import subprocess
-import curses
-from config_manager import load_token, save_token, delete_token
-from menu import main_menu, display_settings
-from github_utils import get_github_user
+import requests
+from bs4 import BeautifulSoup
+import json
 
+url = "https://minfin.com.ua/articles/"
 
-def main(stdscr):
-    stdscr.clear()
+response = requests.get(url)
+soup = BeautifulSoup(response.content, "html.parser")
 
-    token = load_token()
+news_items = soup.find_all("li", class_="item")[:7]
 
-    if token is None:
-        stdscr.addstr(0, 0, "Enter your GitHub Personal Access Token:")
-        stdscr.refresh()
+news_data = []
 
-        curses.echo()
-        token = stdscr.getstr(1, 0).decode("utf-8")
-        curses.noecho()
+for idx, item in enumerate(news_items):
+    date = item.find("span", class_="data").text.strip()
+    title = item.find("span", class_="link").text.strip()
+    url = 'https://minfin.com.ua'+item.find("a")["href"]
 
-        save_token(token)
+    news_item = {
+        "title": title,
+        "data": date,
+        "url": url
+    }
+    news_data.append(news_item)
 
-    try:
-        user = get_github_user(token)
-        while True:
-            choice = main_menu(stdscr, user)
-            if choice == "settings":
-                key = display_settings(stdscr)
-                if key == ord('1'):
-                    delete_token()
-                    stdscr.addstr(5, 0, "Token deleted. Restart the program.")
-                    stdscr.refresh()
-                    stdscr.getch()
-                    break
-    except Exception as e:
-        stdscr.clear()
-        stdscr.addstr(0, 0, "Authentication or data retrieval error.")
-        stdscr.addstr(1, 0, str(e))
-        stdscr.addstr(3, 0, "Delete the config/access.json file for re-authentication.")
+with open("news_data.json", "w", encoding="utf-8") as f:
+    json.dump(news_data, f, ensure_ascii=False, indent=4)
 
-    stdscr.refresh()
-    stdscr.getch()
-
-curses.wrapper(main)
+print("JSON file 'news_data.json' has been created successfully with the parsed news.")
