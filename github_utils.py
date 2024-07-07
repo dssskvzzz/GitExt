@@ -115,7 +115,9 @@ def upload_files_with_replacement(token, repo_name, directory_path, repo_owner):
 
         # Start upload
         upload_directory(directory_path, "")
-
+    except:
+        logging.error("An error occurred while uploading files.")
+        pass
     finally:
         # Clean up curses and return to normal terminal mode
         if stdscr:
